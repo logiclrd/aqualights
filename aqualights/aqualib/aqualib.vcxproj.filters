@@ -18,6 +18,12 @@
     <ClInclude Include="aqua.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="jc_voronoi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="polygon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="aqua.cc">

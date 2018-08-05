@@ -1,3 +1,5 @@
+#pragma once
+
 struct AquaSource
 {
 	float x, y;
@@ -36,3 +38,40 @@ struct AquaContext
 };
 
 typedef struct AquaContext AquaContext;
+
+struct AquaPoint
+{
+	float x, y;
+
+	AquaPoint()
+	{
+		x = 0;
+		y = 0;
+	}
+
+	AquaPoint(float x, float y)
+	{
+		this->x = x;
+		this->y = y;
+	}
+
+	template <typename DuckPoint>
+	AquaPoint(const DuckPoint &other)
+	{
+		x = other.x;
+		y = other.y;
+	}
+};
+
+typedef struct AquaPoint AquaPoint;
+
+struct AquaLightMap
+{
+	int width, height;
+	short *light_for_pixel;
+
+	int num_lights;
+	short *light_pixel_count;
+};
+
+typedef struct AquaLightMap AquaLightMap;

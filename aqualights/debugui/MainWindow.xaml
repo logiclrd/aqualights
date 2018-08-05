@@ -16,10 +16,15 @@
             <Button Name="cmdInitialize" Click="cmdInitialize_Click">Initialize</Button>
             <ToggleButton Name="tbAdvance" Click="tbAdvance_Click">Advance</ToggleButton>
             <Button Name="cmdAddSource" Click="cmdAddSource_Click">Add Source</Button>
+            <ToggleButton Name="tbLights" Click="tbLights_Click">Lights</ToggleButton>
         </UniformGrid>
 
         <Viewbox Grid.Row="1">
-            <Image Name="imgDisplay" />
+            <Grid>
+                <Image Name="imgDisplay" MouseDown="imgDisplay_MouseDown" />
+                <Path Name="pLights" StrokeThickness="2" Stroke="Green" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                <Image Name="imgLightMap" Opacity="0.3" />
+            </Grid>
         </Viewbox>
     </Grid>
 </Window>

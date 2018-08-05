@@ -1,9 +1,14 @@
 LIBRARY aquadll
 EXPORTS
 	aqua_initialize
+	aqua_free
 	aqua_update_ripple
 	aqua_add_source
 	aqua_update_sources
 	aqua_get_buffer_size
 	aqua_get_frame_size
 	aqua_get_frame
+	aqua_generate_light_map
+	aqua_light_map_get_light_for_pixel
+	aqua_light_map_get_light_pixel_count
+	aqua_free_light_map

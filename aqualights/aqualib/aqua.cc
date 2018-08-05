@@ -1,6 +1,10 @@
 #include "aqua.h"
 #include "math.h"
 
+#include <vector>
+
+using namespace std;
+
 AquaContext *aqua_initialize(int width, int height, float frames_per_cycle)
 {
 	AquaContext *context = new AquaContext();
@@ -50,6 +54,24 @@ AquaContext *aqua_initialize(int width, int height, float frames_per_cycle)
 	context->time_factor = 6.283185f / frames_per_cycle;
 
 	return context;
+}
+
+void aqua_free(AquaContext *context)
+{
+	delete[] context->func;
+	delete[] context->funci;
+	delete[] context->damp;
+
+	while (context->first_source != NULL)
+	{
+		AquaSource *source = context->first_source;
+
+		context->first_source = source->next;
+
+		delete source;
+	}
+
+	delete context;
 }
 
 void aqua_update_ripple(AquaContext *context)
@@ -252,7 +274,139 @@ void aqua_get_frame(AquaContext *context, unsigned char *buffer)
 		}
 }
 
-// TODO: voronoi mapping of light positions
+#define JC_VORONOI_IMPLEMENTATION
+#include "jc_voronoi.h"
+
+#include "polygon.h"
+
+class jcv_diagram_scope
+{
+	jcv_diagram diagram;
+	bool created;
+public:
+	jcv_diagram_scope()
+	{
+		created = false;
+	}
+
+	void generate(const vector<jcv_point> &points, jcv_rect bounds)
+	{
+		if (created)
+			jcv_diagram_free(&diagram);
+
+		memset(&diagram, 0, sizeof(diagram));
+
+		jcv_diagram_generate(points.size(), &points[0], &bounds, &diagram);
+
+		created = true;
+	}
+
+	const jcv_site *get_sites() const
+	{
+		return jcv_diagram_get_sites(&diagram);
+	}
+
+	~jcv_diagram_scope()
+	{
+		if (created)
+			jcv_diagram_free(&diagram);
+	}
+};
+
+AquaLightMap *aqua_generate_light_map(AquaContext *context, int num_lights, AquaPoint *lights)
+{
+	vector<jcv_point> points;
+
+	points.resize(num_lights);
+
+	for (int i = 0; i < num_lights; i++)
+	{
+		points[i].x = lights[i].x;
+		points[i].y = lights[i].y;
+	}
+
+	jcv_diagram_scope diagram;
+	jcv_rect bounds;
+
+	bounds.min.x = 0;
+	bounds.min.y = 0;
+
+	bounds.max.x = (jcv_real)context->window_width;
+	bounds.max.y = (jcv_real)context->window_height;
+
+	diagram.generate(points, bounds);
+
+	AquaLightMap *light_map = new AquaLightMap();
+
+	light_map->width = context->window_width;
+	light_map->height = context->window_height;
+	light_map->num_lights = num_lights;
+
+	int buffer_size = light_map->width * light_map->height;
+
+	light_map->light_for_pixel = new short[buffer_size];
+	light_map->light_pixel_count = new short[num_lights];
+
+	for (int i = 0; i < buffer_size; i++)
+		light_map->light_for_pixel[i] = -1;
+	for (int i = 0; i < num_lights; i++)
+		light_map->light_pixel_count[i] = 0;
+
+	const jcv_site *sites = diagram.get_sites();
+
+	vector<AquaPoint> poly_points;
+
+	poly_points.resize(3);
+
+	for (int i = 0; i < num_lights; i++)
+	{
+		const jcv_graphedge *edge_iterator = sites[i].edges;
+
+		poly_points[0] = sites[i].p;
+
+		while (edge_iterator)
+		{
+			poly_points[1] = edge_iterator->pos[0];
+			poly_points[2] = edge_iterator->pos[1];
+
+			fill_polygon(poly_points, light_map->light_for_pixel, light_map->width, light_map->height, (short)i);
+
+			edge_iterator = edge_iterator->next;
+		}
+	}
+
+	for (int i = 0; i < buffer_size; i++)
+		if (light_map->light_for_pixel[i] > 0)
+			light_map->light_pixel_count[light_map->light_for_pixel[i]]++;
+
+	return light_map;
+}
+
+void aqua_light_map_get_light_for_pixel(AquaLightMap *light_map, int *width, int *height, short *buffer)
+{
+	*width = light_map->width;
+	*height = light_map->height;
+
+	if (buffer != NULL)
+		memcpy(buffer, light_map->light_for_pixel, light_map->width * light_map->height * sizeof(light_map->light_for_pixel[0]));
+}
+
+void aqua_light_map_get_light_pixel_count(AquaLightMap *light_map, int *num_lights, short *buffer)
+{
+	*num_lights = light_map->num_lights;
+
+	if (buffer != NULL)
+		memcpy(buffer, light_map->light_pixel_count, light_map->num_lights * sizeof(light_map->light_pixel_count[0]));
+}
+
+void aqua_free_light_map(AquaLightMap *light_map)
+{
+	delete[] light_map->light_for_pixel;
+	delete[] light_map->light_pixel_count;
+
+	delete light_map;
+}
+
 // TODO: convert brightness to palette
 // TODO: palette rotation functions
 //       => long day/night cycle
