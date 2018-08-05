@@ -6,8 +6,14 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aqualib", "aqualib\aqualib.vcxproj", "{0024DD03-B6F2-4486-AB25-FDBACC3C6C47}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aquadll", "aquadll\aquadll.vcxproj", "{8750EE2C-D7E6-41EA-8A45-88DBDB663519}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0024DD03-B6F2-4486-AB25-FDBACC3C6C47} = {0024DD03-B6F2-4486-AB25-FDBACC3C6C47}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "debugui", "debugui\debugui.csproj", "{CF9BC1EF-1B02-4029-86CE-3BACA8C6479C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8750EE2C-D7E6-41EA-8A45-88DBDB663519} = {8750EE2C-D7E6-41EA-8A45-88DBDB663519}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{60D7D88A-9469-4E56-9543-8CB794F00015}"
 	ProjectSection(SolutionItems) = preProject

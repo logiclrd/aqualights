@@ -1,3 +1,20 @@
+struct AquaSource
+{
+	float x, y;
+	float dx, dy;
+
+	float radius;
+	float intensity;
+
+	int local_time, duration;
+
+	float fade_ratio;
+
+	struct AquaSource *next;
+};
+
+typedef struct AquaSource AquaSource;
+
 struct AquaContext
 {
 	int window_width, window_height;
@@ -16,21 +33,6 @@ struct AquaContext
 	float time_factor;
 
 	AquaSource *first_source;
-};
-
-struct AquaSource
-{
-	float x, y;
-	float dx, dy;
-
-	float radius;
-	float intensity;
-
-	int local_time, duration;
-
-	float fade_ratio;
-
-	struct AquaSource *next;
 };
 
 typedef struct AquaContext AquaContext;

@@ -7,6 +7,19 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <UniformGrid Grid.Row="0" Rows="1">
+            <Button Name="cmdInitialize" Click="cmdInitialize_Click">Initialize</Button>
+            <ToggleButton Name="tbAdvance" Click="tbAdvance_Click">Advance</ToggleButton>
+            <Button Name="cmdAddSource" Click="cmdAddSource_Click">Add Source</Button>
+        </UniformGrid>
+
+        <Viewbox Grid.Row="1">
+            <Image Name="imgDisplay" />
+        </Viewbox>
     </Grid>
 </Window>
