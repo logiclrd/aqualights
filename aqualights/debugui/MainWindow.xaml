@@ -16,7 +16,8 @@
             <Button Name="cmdInitialize" Click="cmdInitialize_Click">Initialize</Button>
             <ToggleButton Name="tbAdvance" Click="tbAdvance_Click">Advance</ToggleButton>
             <Button Name="cmdAddSource" Click="cmdAddSource_Click">Add Source</Button>
-            <ToggleButton Name="tbLights" Click="tbLights_Click">Lights</ToggleButton>
+            <ToggleButton Name="tbConfigureLights" Click="tbConfigureLights_Click">Configure Lights</ToggleButton>
+            <ToggleButton Name="tbShowLights" Click="tbShowLights_Click">Show Lights</ToggleButton>
         </UniformGrid>
 
         <Viewbox Grid.Row="1">

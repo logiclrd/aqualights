@@ -70,10 +70,11 @@ typedef struct AquaPoint AquaPoint;
 struct AquaLightMap
 {
 	int width, height;
-	short *light_for_pixel;
+	int *light_for_pixel;
 
 	int num_lights;
-	short *light_pixel_count;
+	int *light_pixel_count;
+	unsigned char *light_brightness;
 };
 
 typedef struct AquaLightMap AquaLightMap;

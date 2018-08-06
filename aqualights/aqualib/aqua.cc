@@ -413,8 +413,9 @@ AquaLightMap *aqua_generate_light_map(AquaContext *context, int num_lights, Aqua
 
 	int buffer_size = light_map->width * light_map->height;
 
-	light_map->light_for_pixel = new short[buffer_size];
-	light_map->light_pixel_count = new short[num_lights];
+	light_map->light_for_pixel = new int[buffer_size];
+	light_map->light_pixel_count = new int[num_lights];
+	light_map->light_brightness = new unsigned char[num_lights];
 
 	for (int i = 0; i < buffer_size; i++)
 		light_map->light_for_pixel[i] = -1;
@@ -433,25 +434,33 @@ AquaLightMap *aqua_generate_light_map(AquaContext *context, int num_lights, Aqua
 
 		poly_points[0] = sites[i].p;
 
+		if (poly_points[0].y == (int)poly_points[0].y)
+			poly_points[0].y -= 0.00001f;
+
 		while (edge_iterator)
 		{
 			poly_points[1] = edge_iterator->pos[0];
 			poly_points[2] = edge_iterator->pos[1];
 
-			fill_polygon(poly_points, light_map->light_for_pixel, light_map->width, light_map->height, (short)i);
+			if (poly_points[1].y == (int)poly_points[1].y)
+				poly_points[1].y -= 0.00001f;
+			if (poly_points[2].y == (int)poly_points[2].y)
+				poly_points[2].y -= 0.00001f;
+
+			fill_polygon(poly_points, light_map->light_for_pixel, light_map->width, light_map->height, (int)i);
 
 			edge_iterator = edge_iterator->next;
 		}
 	}
 
 	for (int i = 0; i < buffer_size; i++)
-		if (light_map->light_for_pixel[i] > 0)
+		if (light_map->light_for_pixel[i] >= 0)
 			light_map->light_pixel_count[light_map->light_for_pixel[i]]++;
 
 	return light_map;
 }
 
-void aqua_light_map_get_light_for_pixel(AquaLightMap *light_map, int *width, int *height, short *buffer)
+void aqua_light_map_get_light_for_pixel(AquaLightMap *light_map, int *width, int *height, int *buffer)
 {
 	*width = light_map->width;
 	*height = light_map->height;
@@ -460,12 +469,77 @@ void aqua_light_map_get_light_for_pixel(AquaLightMap *light_map, int *width, int
 		memcpy(buffer, light_map->light_for_pixel, light_map->width * light_map->height * sizeof(light_map->light_for_pixel[0]));
 }
 
-void aqua_light_map_get_light_pixel_count(AquaLightMap *light_map, int *num_lights, short *buffer)
+void aqua_light_map_get_light_pixel_count(AquaLightMap *light_map, int *num_lights, int *buffer)
 {
 	*num_lights = light_map->num_lights;
 
 	if (buffer != NULL)
 		memcpy(buffer, light_map->light_pixel_count, light_map->num_lights * sizeof(light_map->light_pixel_count[0]));
+}
+
+void aqua_light_map_get_light_brightness(AquaLightMap *light_map, int *num_lights, unsigned char *buffer)
+{
+	*num_lights = light_map->num_lights;
+
+	if (buffer != NULL)
+		memcpy(buffer, light_map->light_brightness, light_map->num_lights);
+}
+
+void aqua_light_map_render(AquaLightMap *light_map, AquaContext *context)
+{
+	int frame_width, frame_height;
+
+	aqua_get_frame_size(context, &frame_width, &frame_height);
+
+	if ((light_map->width != frame_width)
+	 || (light_map->height != frame_height))
+		return;
+
+	int frame_size = frame_width * frame_height;
+
+	vector<unsigned char> frame;
+
+	frame.resize(frame_size);
+
+	aqua_get_frame(context, &frame[0]);
+
+	struct LightAccumulator
+	{
+		int sum;
+		int count;
+
+		LightAccumulator()
+		{
+			sum = 0;
+			count = 0;
+		}
+	};
+
+	vector<int> accumulators;
+
+	accumulators.resize(light_map->num_lights);
+
+	for (int i=0; i < frame_size; i++)
+	{
+		int light_index = light_map->light_for_pixel[i];
+
+		if (light_index < 0)
+			continue;
+
+		accumulators[light_index] += frame[i];
+	}
+
+	for (int i = 0; i < light_map->num_lights; i++)
+	{
+		int final_value = (accumulators[i] + light_map->light_pixel_count[i] - 1) / light_map->light_pixel_count[i];
+
+		if (final_value < 0)
+			final_value = 0;
+		if (final_value > 255)
+			final_value = 255;
+
+		light_map->light_brightness[i] = (unsigned char)final_value;
+	}
 }
 
 void aqua_free_light_map(AquaLightMap *light_map)

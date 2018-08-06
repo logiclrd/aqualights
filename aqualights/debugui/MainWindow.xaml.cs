@@ -57,7 +57,28 @@ namespace debugui
 
 			byte[] imageBuffer = new byte[width * height];
 
-			AquaLib.aqua_get_frame(_context, imageBuffer);
+			bool showLights = (tbShowLights.IsChecked ?? false) && (_lightMap != IntPtr.Zero) && (_lightMapBuffer.Length == imageBuffer.Length);
+
+			if (!showLights)
+				AquaLib.aqua_get_frame(_context, imageBuffer);
+			else
+			{
+				AquaLib.aqua_light_map_render(_lightMap, _context);
+
+				AquaLib.aqua_light_map_get_light_brightness(_lightMap, out int numLights, null);
+				byte[] lightBrightness = new byte[numLights];
+				AquaLib.aqua_light_map_get_light_brightness(_lightMap, out numLights, lightBrightness);
+
+				for (int i = 0; i < _lightMapBuffer.Length; i++)
+				{
+					int lightIndex = _lightMapBuffer[i];
+
+					if (lightIndex < 0)
+						imageBuffer[i] = 0;
+					else
+						imageBuffer[i] = lightBrightness[lightIndex];
+				}
+			}
 
 			imgDisplay.Source = BitmapSource.Create(
 				width,
@@ -78,18 +99,25 @@ namespace debugui
 		}
 
 		List<AquaPoint> _lights = new List<AquaPoint>();
+		IntPtr _lightMap;
+		int[] _lightMapBuffer;
 
-		private void tbLights_Click(object sender, RoutedEventArgs e)
+		private void tbConfigureLights_Click(object sender, RoutedEventArgs e)
 		{
-			if (tbLights.IsChecked ?? false)
+			if (tbConfigureLights.IsChecked ?? false)
 			{
 				if (_context == IntPtr.Zero)
 				{
-					tbLights.IsChecked = false;
+					tbConfigureLights.IsChecked = false;
 					return;
 				}
 
+				if (_lightMap != IntPtr.Zero)
+					AquaLib.aqua_free_light_map(_lightMap);
+
 				_lights.Clear();
+				_lightMap = IntPtr.Zero;
+				_lightMapBuffer = null;
 				pLights.Data = new PathGeometry();
 				imgLightMap.Source = null;
 			}
@@ -97,17 +125,15 @@ namespace debugui
 			{
 				if (_lights.Count > 0)
 				{
-					var lightMap = IntPtr.Zero;
-
 					try
 					{
-						lightMap = AquaLib.aqua_generate_light_map(_context, _lights.Count, _lights.ToArray());
+						_lightMap = AquaLib.aqua_generate_light_map(_context, _lights.Count, _lights.ToArray());
 
-						AquaLib.aqua_light_map_get_light_for_pixel(lightMap, out int width, out int height, null);
-						var mapBuffer = new short[width * height];
-						AquaLib.aqua_light_map_get_light_for_pixel(lightMap, out width, out height, mapBuffer);
+						AquaLib.aqua_light_map_get_light_for_pixel(_lightMap, out int width, out int height, null);
+						_lightMapBuffer = new int[width * height];
+						AquaLib.aqua_light_map_get_light_for_pixel(_lightMap, out width, out height, _lightMapBuffer);
 
-						AquaLib.aqua_light_map_get_light_pixel_count(lightMap, out int numLights, null);
+						AquaLib.aqua_light_map_get_light_pixel_count(_lightMap, out int numLights, null);
 
 						int[] randomColor = new int[numLights];
 
@@ -119,8 +145,8 @@ namespace debugui
 						int[] imageBuffer = new int[width * height];
 
 						for (int i = 0; i < imageBuffer.Length; i++)
-							if (mapBuffer[i] >= 0)
-								imageBuffer[i] = randomColor[mapBuffer[i]];
+							if (_lightMapBuffer[i] >= 0)
+								imageBuffer[i] = randomColor[_lightMapBuffer[i]];
 
 						imgLightMap.Source = BitmapSource.Create(
 							width,
@@ -132,18 +158,27 @@ namespace debugui
 							imageBuffer,
 							width * 4);
 					}
-					finally
+					catch
 					{
-						if (lightMap != IntPtr.Zero)
-							AquaLib.aqua_free_light_map(lightMap);
+						if (_lightMap != IntPtr.Zero)
+							AquaLib.aqua_free_light_map(_lightMap);
+
+						_lightMap = IntPtr.Zero;
+
+						throw;
 					}
 				}
 			}
 		}
 
+		private void tbShowLights_Click(object sender, RoutedEventArgs e)
+		{
+			imgLightMap.Visibility = (tbShowLights.IsChecked ?? false) ? Visibility.Hidden : Visibility.Visible;
+		}
+
 		private void imgDisplay_MouseDown(object sender, MouseButtonEventArgs e)
 		{
-			if (tbLights.IsChecked ?? false)
+			if (tbConfigureLights.IsChecked ?? false)
 			{
 				AquaLib.aqua_get_frame_size(_context, out int width, out int height);
 

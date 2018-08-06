@@ -12,4 +12,6 @@ EXPORTS
 	aqua_generate_light_map
 	aqua_light_map_get_light_for_pixel
 	aqua_light_map_get_light_pixel_count
+	aqua_light_map_get_light_brightness
+	aqua_light_map_render
 	aqua_free_light_map
