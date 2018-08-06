@@ -4,6 +4,7 @@ struct AquaSource
 {
 	float x, y;
 	float dx, dy;
+	bool is_stationary;
 
 	float radius;
 	float intensity;
@@ -32,6 +33,7 @@ struct AquaContext
 	float *funci;
 	float *damp;
 
+	float frames_per_cycle;
 	float time_factor;
 
 	AquaSource *first_source;

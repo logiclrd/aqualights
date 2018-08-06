@@ -18,6 +18,8 @@ namespace debugui
 		[DllImport("aquadll", CallingConvention = CallingConvention.Cdecl)]
 		public static extern void aqua_add_source(IntPtr context, ref AquaSource source);
 		[DllImport("aquadll", CallingConvention = CallingConvention.Cdecl)]
+		public static extern void aqua_add_random_source(IntPtr context);
+		[DllImport("aquadll", CallingConvention = CallingConvention.Cdecl)]
 		public static extern void aqua_update_sources(IntPtr context);
 		[DllImport("aquadll", CallingConvention = CallingConvention.Cdecl)]
 		public static extern void aqua_get_buffer_size(IntPtr context, out int width, out int height);

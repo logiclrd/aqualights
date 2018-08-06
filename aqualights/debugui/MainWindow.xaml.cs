@@ -30,7 +30,7 @@ namespace debugui
 
 		private void cmdInitialize_Click(object sender, RoutedEventArgs e)
 		{
-			_context = AquaLib.aqua_initialize(100, 75, 10);
+			_context = AquaLib.aqua_initialize(100, 75, 20);
 		}
 
 		DispatcherTimer tmrAdvance;
@@ -74,23 +74,7 @@ namespace debugui
 
 		private void cmdAddSource_Click(object sender, RoutedEventArgs e)
 		{
-			AquaLib.aqua_get_buffer_size(_context, out int width, out int height);
-
-			int direction = _rnd.Next(2);
-			int delta = 1 - direction * 2;
-
-			var source = new AquaSource();
-
-			source.X = direction * width;
-			source.Y = _rnd.Next(height);
-			source.DX = delta;
-			source.DY = (float)(_rnd.NextDouble() - 0.5) * 0.1f;
-			source.Radius = (float)(_rnd.NextDouble() + 1);
-			source.Intensity = (float)_rnd.NextDouble() * 0.75f + 0.25f;
-			source.Duration = _rnd.Next(width / 5, width);
-			source.X = source.X + delta * _rnd.Next(0, width - source.Duration);
-
-			AquaLib.aqua_add_source(_context, ref source);
+			AquaLib.aqua_add_random_source(_context);
 		}
 
 		List<AquaPoint> _lights = new List<AquaPoint>();

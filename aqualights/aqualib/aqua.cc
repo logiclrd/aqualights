@@ -51,6 +51,7 @@ AquaContext *aqua_initialize(int width, int height, float frames_per_cycle)
 			context->damp[j + context->gw * i] =
 			context->damp[j + (context->grid_size_y - 1 - i) * context->gw] = (.999f - (context->window_offset_y - i) * .002f);
 
+	context->frames_per_cycle = frames_per_cycle;
 	context->time_factor = 6.283185f / frames_per_cycle;
 
 	return context;
@@ -130,7 +131,8 @@ void aqua_update_ripple(AquaContext *context)
 		int gi = j * context->gw + istart;
 		int giEnd = j * context->gw + iend;
 
-		for (; gi != giEnd; gi += iinc) {
+		for (; gi != giEnd; gi += iinc)
+		{
 			float previ = context->func[gi - 1];
 			float nexti = context->func[gi + 1];
 			float prevj = context->func[gi - context->gw];
@@ -159,13 +161,77 @@ void aqua_add_source(AquaContext *context, AquaSource *source)
 {
 	AquaSource *link = new AquaSource(*source);
 
+	link->local_time = 0;
 	link->fade_ratio = 1.0f / (link->duration * 0.25f);
+
+	float velocity = sqrtf(link->dx * link->dx + link->dy * link->dy);
+	float velocity_per_cycle = velocity * context->frames_per_cycle;
+
+	link->is_stationary = (velocity_per_cycle < 5);
 
 	link->next = context->first_source;
 	context->first_source = link;
 
 	if (source->next)
 		aqua_add_source(context, source->next);
+}
+
+void aqua_add_random_source(AquaContext *context)
+{
+	AquaSource source;
+
+	bool stationary = (rand() & 3) == 0;
+
+	float x1, y1;
+	float x2, y2;
+
+	float dx, dy;
+
+	int duration;
+
+	float rand_factor = 1.0f / (RAND_MAX + 1.0f);
+
+	x1 = rand() * rand_factor * context->grid_size_x;
+	y1 = rand() * rand_factor * context->grid_size_y;
+
+	if (stationary)
+	{
+		float travel = rand() * rand_factor * 5.0f;
+		float angle = rand() * rand_factor * 6.283185f;
+
+		dx = travel * cosf(angle);
+		dy = travel * sinf(angle);
+
+		x2 = x1 + dx;
+		y2 = y1 + dy;
+
+		duration = (int)((rand() * rand_factor * 15 + 3) * context->frames_per_cycle);
+	}
+	else
+	{
+		x2 = rand() * rand_factor * context->grid_size_x;
+
+		dx = x2 - x1;
+		dy = (rand() * rand_factor - 0.5f) * 0.5f * dx;
+
+		y2 = y1 + dy;
+
+		float distance = sqrtf(dx * dx + dy * dy);
+		float speed = (rand() * rand_factor + 0.5f) * 0.3f;
+
+		duration = (int)(distance / speed);
+	}
+
+	source.x = x1;
+	source.y = y1;
+	source.dx = dx / duration;
+	source.dy = dy / duration;
+	source.radius = rand() * rand_factor + 1.0f + (stationary ? 1.0f : 0.0f);
+	source.intensity = rand() * rand_factor * 0.75f + 0.25f;
+	source.duration = duration;
+	source.next = NULL;
+
+	aqua_add_source(context, &source);
 }
 
 void aqua_update_sources(AquaContext *context)
@@ -196,7 +262,10 @@ top_of_loop:
 		if (source->local_time >= source->duration * 3 / 4)
 			lifetime_intensity = (source->duration - source->local_time) * source->fade_ratio;
 
-		float intensity = source->intensity * lifetime_intensity * sinf(source->local_time * context->time_factor);
+		float intensity = source->intensity * lifetime_intensity;
+
+		if (source->is_stationary)
+			intensity *= sinf(source->local_time * context->time_factor);
 
 		int start_y = (int)ceilf(source->y - source->radius);
 		int end_y = (int)floorf(source->y + source->radius);
@@ -411,4 +480,3 @@ void aqua_free_light_map(AquaLightMap *light_map)
 // TODO: palette rotation functions
 //       => long day/night cycle
 //       => short, stochastic sun/shade cycle during day
-// TODO: create sources randomly

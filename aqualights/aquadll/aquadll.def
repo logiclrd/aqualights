@@ -4,6 +4,7 @@ EXPORTS
 	aqua_free
 	aqua_update_ripple
 	aqua_add_source
+	aqua_add_random_source
 	aqua_update_sources
 	aqua_get_buffer_size
 	aqua_get_frame_size
