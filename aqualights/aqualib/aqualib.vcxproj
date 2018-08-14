@@ -124,11 +124,21 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="aqua.cc" />
+    <ClCompile Include="sky.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aqua.h" />
     <ClInclude Include="jc_voronoi.h" />
     <ClInclude Include="polygon.h" />
+    <ClInclude Include="sky.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="sky.png" />
+    <Image Include="sky2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="sky.raw" />
+    <None Include="sky2.psd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

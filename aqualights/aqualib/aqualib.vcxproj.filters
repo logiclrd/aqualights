@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="sky">
+      <UniqueIdentifier>{0894540e-d658-4f96-a04f-89e996f8271e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aqua.h">
@@ -24,10 +27,32 @@
     <ClInclude Include="polygon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sky.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="aqua.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sky.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="sky.png">
+      <Filter>sky</Filter>
+    </Image>
+    <Image Include="sky2.png">
+      <Filter>sky</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="sky.raw">
+      <Filter>sky</Filter>
+    </None>
+    <None Include="sky2.psd">
+      <Filter>sky</Filter>
+    </None>
   </ItemGroup>
 </Project>

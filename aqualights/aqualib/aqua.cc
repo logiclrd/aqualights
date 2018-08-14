@@ -1,7 +1,8 @@
 #include "aqua.h"
-#include "math.h"
+#include "sky.h"
 
 #include <vector>
+#include <cmath>
 
 using namespace std;
 

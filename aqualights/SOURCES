@@ -6,3 +6,6 @@ Voronoi cell algorithm:
 
 Polygon fill:
   http://alienryderflex.com/polygon_fill/
+
+sRGB Luminance:
+  https://stackoverflow.com/questions/596216/formula-to-determine-brightness-of-rgb-color
