@@ -15,17 +15,27 @@
         <UniformGrid Grid.Row="0" Rows="1">
             <Button Name="cmdInitialize" Click="cmdInitialize_Click">Initialize</Button>
             <ToggleButton Name="tbAdvance" Click="tbAdvance_Click">Advance</ToggleButton>
-            <Button Name="cmdAddSource" Click="cmdAddSource_Click">Add Source</Button>
+            <ToggleButton Name="tbAddSource" Click="tbAddSource_Click">Add Source</ToggleButton>
             <ToggleButton Name="tbConfigureLights" Click="tbConfigureLights_Click">Configure Lights</ToggleButton>
-            <ToggleButton Name="tbShowLights" Click="tbShowLights_Click">Show Lights</ToggleButton>
+            <ToggleButton Name="tbShowLights" Click="tbShowLights_Click" IsChecked="True">Show Lights</ToggleButton>
+            <ToggleButton Name="tbRenderLights" Click="tbRenderLights_Click">Render Lights</ToggleButton>
+            <ToggleButton Name="tbCreateVideo" Click="tbCreateVideo_Click">Create Video</ToggleButton>
         </UniformGrid>
 
-        <Viewbox Grid.Row="1">
-            <Grid>
-                <Image Name="imgDisplay" MouseDown="imgDisplay_MouseDown" />
-                <Path Name="pLights" StrokeThickness="2" Stroke="Green" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                <Image Name="imgLightMap" Opacity="0.3" />
-            </Grid>
-        </Viewbox>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="10" />
+            </Grid.ColumnDefinitions>
+
+            <Viewbox Grid.Column="0">
+                <Grid>
+                    <Image Name="imgDisplay" MouseDown="imgDisplay_MouseDown" />
+                    <Path Name="pLights" StrokeThickness="1" Stroke="Green" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                    <Image Name="imgLightMap" Opacity="0.3" />
+                </Grid>
+            </Viewbox>
+            <Image Grid.Column="1" Name="imgSkyPalette" Stretch="Fill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+        </Grid>
     </Grid>
 </Window>

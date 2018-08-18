@@ -15,3 +15,6 @@ EXPORTS
 	aqua_light_map_get_light_brightness
 	aqua_light_map_render
 	aqua_free_light_map
+	aqua_advance_sky
+	aqua_get_current_sky_palette
+	aqua_get_light_colours_from_brightnesses

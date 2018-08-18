@@ -1,5 +1,7 @@
 #pragma once
 
+#include "sky.h"
+
 struct AquaSource
 {
 	float x, y;
@@ -36,7 +38,20 @@ struct AquaContext
 	float frames_per_cycle;
 	float time_factor;
 
+	float rand_factor;
+
 	AquaSource *first_source;
+
+	const AquaSky *from_sky;
+	const AquaSky *to_sky;
+	int to_sky_index;
+	float sky_fade_t;
+	float sky_fade_dt;
+	float sky_day_night_t;
+	float sky_day_night_dt;
+	float sky_sun_shade_t;
+	float sky_sun_shade_dt;
+	AquaSky current_sky;
 };
 
 typedef struct AquaContext AquaContext;

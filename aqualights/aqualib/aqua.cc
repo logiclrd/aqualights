@@ -6,7 +6,7 @@
 
 using namespace std;
 
-AquaContext *aqua_initialize(int width, int height, float frames_per_cycle)
+AquaContext *aqua_initialize(int width, int height, float frames_per_cycle, float frames_per_day)
 {
 	AquaContext *context = new AquaContext();
 
@@ -54,6 +54,18 @@ AquaContext *aqua_initialize(int width, int height, float frames_per_cycle)
 
 	context->frames_per_cycle = frames_per_cycle;
 	context->time_factor = 6.283185f / frames_per_cycle;
+
+	context->rand_factor = 1.0f / (RAND_MAX + 1.0f);
+
+	context->from_sky = NULL;
+	context->to_sky = NULL;
+	context->to_sky_index = sky_count - 1;
+	context->sky_fade_t = 1.0;
+	context->sky_fade_dt = 0.0;
+	context->sky_day_night_t = 0.0f;
+	context->sky_day_night_dt = 6.283185f / frames_per_day;
+	context->sky_sun_shade_t = 0.0f;
+	context->sky_sun_shade_dt = context->sky_day_night_dt * 150.0f;
 
 	return context;
 }
@@ -190,7 +202,7 @@ void aqua_add_random_source(AquaContext *context)
 
 	int duration;
 
-	float rand_factor = 1.0f / (RAND_MAX + 1.0f);
+	float rand_factor = context->rand_factor;
 
 	x1 = rand() * rand_factor * context->grid_size_x;
 	y1 = rand() * rand_factor * context->grid_size_y;
@@ -551,7 +563,114 @@ void aqua_free_light_map(AquaLightMap *light_map)
 	delete light_map;
 }
 
-// TODO: convert brightness to palette
-// TODO: palette rotation functions
-//       => long day/night cycle
-//       => short, stochastic sun/shade cycle during day
+namespace
+{
+	const AquaSky *select_sky(AquaContext *context, int *index, int breadth)
+	{
+		int range_start = *index - breadth;
+		int range_end = *index + breadth;
+
+		if (range_start < 0)
+			range_start = 0;
+		if (range_end > sky_count)
+			range_end = sky_count;
+
+		int range_size = range_end - range_start;
+
+		float rand_factor = 1.0f / (RAND_MAX + 1.0f);
+
+		*index = range_start + (int)floorf(rand() * context->rand_factor * range_size);
+
+		if (*index < 0)
+			*index = 0;
+		if (*index >= sky_count)
+			*index = sky_count - 1;
+
+		return &sky[*index];
+	}
+
+	unsigned char clamp_byte(float value)
+	{
+		int integer = (int)value;
+
+		if (integer < 1)
+			return 0;
+		if (integer > 254)
+			return 255;
+
+		return (unsigned char)integer;
+	}
+
+	AquaColour interpolate_colour(const AquaColour &from, const AquaColour &to, float t, float it)
+	{
+		AquaColour ret;
+
+		ret.r = clamp_byte(from.r * it + to.r * t);
+		ret.g = clamp_byte(from.g * it + to.g * t);
+		ret.b = clamp_byte(from.b * it + to.b * t);
+
+		return ret;
+	}
+}
+
+void aqua_advance_sky(AquaContext *context)
+{
+	if (context->to_sky == NULL)
+		context->to_sky = select_sky(context, &context->to_sky_index, sky_count);
+
+	context->sky_day_night_t += context->sky_day_night_dt;
+	while (context->sky_day_night_t > 6.283185f)
+		context->sky_day_night_t -= 6.283185f;
+
+	context->sky_sun_shade_t += context->sky_sun_shade_dt;
+	while (context->sky_sun_shade_t > 6.283185f)
+		context->sky_sun_shade_t -= 6.283185f;
+
+	if (rand() < context->sky_day_night_dt * 25.0f)
+		context->sky_sun_shade_dt = (rand() + 0.5f) * context->sky_day_night_dt * 150.0f;
+
+	context->sky_fade_t += context->sky_fade_dt;
+
+	if (context->sky_fade_t >= 1.0f)
+	{
+		do
+			context->sky_fade_t -= 1.0f;
+		while (context->sky_fade_t >= 1.0f);
+
+		float day_night = cosf(context->sky_day_night_t);
+		float sun_shade_magnitude = (day_night + 0.5f) * 0.1333333f;
+
+		day_night *= (1.0f - sun_shade_magnitude);
+
+		float sun_shade = sinf(context->sky_sun_shade_t) * sun_shade_magnitude;
+
+		float brightness = (day_night + sun_shade + 1.0f) * 0.5f;
+
+		context->to_sky_index = (int)floorf(brightness * sky_count);
+
+		int breadth = (int)floorf((rand() * context->rand_factor) * (rand() * context->rand_factor) * 0.5f * sky_count);
+
+		context->from_sky = context->to_sky;
+		context->to_sky = select_sky(context, &context->to_sky_index, breadth);
+
+		context->sky_fade_dt = (rand() * context->rand_factor + 0.1f) * (breadth + 2) * 0.0005f;
+	}
+
+	float t = context->sky_fade_t;
+	float it = 1.0f - t;
+
+	for (int i = 0; i < 256; i++)
+		context->current_sky.sky_colour[i] = interpolate_colour(context->from_sky->sky_colour[i], context->to_sky->sky_colour[i], t, it);
+}
+
+void aqua_get_current_sky_palette(AquaContext *context, AquaColour *palette)
+{
+	for (int i = 0; i < 256; i++)
+		palette[i] = context->current_sky.sky_colour[i];
+}
+
+void aqua_get_light_colours_from_brightnesses(AquaContext *context, AquaLightMap *light_map, AquaColour *light_colours)
+{
+	for (int i = 0; i < light_map->num_lights; i++)
+		light_colours[i] = context->current_sky.sky_colour[light_map->light_brightness[i]];
+}

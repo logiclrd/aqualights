@@ -10,7 +10,7 @@ namespace debugui
 	public class AquaLib
 	{
 		[DllImport("aquadll", CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr aqua_initialize(int width, int height, float frames_per_cycle);
+		public static extern IntPtr aqua_initialize(int width, int height, float frames_per_cycle, float frames_per_day);
 		[DllImport("aquadll", CallingConvention = CallingConvention.Cdecl)]
 		public static extern void aqua_free(IntPtr context);
 		[DllImport("aquadll", CallingConvention = CallingConvention.Cdecl)]
@@ -39,5 +39,11 @@ namespace debugui
 		public static extern void aqua_light_map_render(IntPtr light_map, IntPtr context);
 		[DllImport("aquadll", CallingConvention = CallingConvention.Cdecl)]
 		public static extern void aqua_free_light_map(IntPtr light_map);
+		[DllImport("aquadll", CallingConvention = CallingConvention.Cdecl)]
+		public static extern void aqua_advance_sky(IntPtr context);
+		[DllImport("aquadll", CallingConvention = CallingConvention.Cdecl)]
+		public static extern void aqua_get_current_sky_palette(IntPtr context, [Out] AquaColour[] palette);
+		[DllImport("aquadll", CallingConvention = CallingConvention.Cdecl)]
+		public static extern void aqua_get_light_colours_from_brightnesses(IntPtr context, IntPtr light_map, [Out] AquaColour[] light_colours);
 	}
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma pack(4)
+
 struct AquaColour
 {
 	unsigned char r, g, b;

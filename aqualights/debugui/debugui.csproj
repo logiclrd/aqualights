@@ -63,6 +63,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="AquaColour.cs" />
     <Compile Include="AquaLib.cs" />
     <Compile Include="AquaPoint.cs" />
     <Compile Include="AquaSource.cs" />
