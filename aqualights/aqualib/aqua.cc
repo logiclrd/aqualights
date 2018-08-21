@@ -1,6 +1,8 @@
 #include "aqua.h"
 #include "sky.h"
 
+#include <cstddef>
+#include <cstdlib>
 #include <vector>
 #include <cmath>
 

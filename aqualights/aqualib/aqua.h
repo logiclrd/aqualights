@@ -93,3 +93,23 @@ struct AquaLightMap
 };
 
 typedef struct AquaLightMap AquaLightMap;
+
+AquaContext *aqua_initialize(int width, int height, float frames_per_cycle, float frames_per_day);
+void aqua_free(AquaContext *context);
+void aqua_update_ripple(AquaContext *context);
+void aqua_add_source(AquaContext *context, AquaSource *source);
+void aqua_add_random_source(AquaContext *context);
+void aqua_update_sources(AquaContext *context);
+void aqua_get_buffer_size(AquaContext *context, int *width, int *height);
+void aqua_get_frame_size(AquaContext *context, int *width, int *height);
+void aqua_get_frame(AquaContext *context, unsigned char *buffer);
+AquaLightMap *aqua_generate_light_map(AquaContext *context, int num_lights, AquaPoint *lights);
+void aqua_light_map_get_light_for_pixel(AquaLightMap *light_map, int *width, int *height, int *buffer);
+void aqua_light_map_get_light_pixel_count(AquaLightMap *light_map, int *num_lights, int *buffer);
+void aqua_light_map_get_light_brightness(AquaLightMap *light_map, int *num_lights, unsigned char *buffer);
+void aqua_light_map_render(AquaLightMap *light_map, AquaContext *context);
+void aqua_free_light_map(AquaLightMap *light_map);
+void aqua_advance_sky(AquaContext *context);
+void aqua_get_current_sky_palette(AquaContext *context, AquaColour *palette);
+void aqua_get_light_colours_from_brightnesses(AquaContext *context, AquaLightMap *light_map, AquaColour *light_colours);
+
