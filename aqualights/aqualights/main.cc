@@ -3,6 +3,8 @@
 
 #include "ws2811.h"
 
+#include <signal.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -113,19 +115,39 @@ Adafruit_NeoPixel *_leds = NULL;
 
 void clear_leds_atexit()
 {
+  printf("Running atexit...\n");
+ 
   if (_leds == NULL)
+  {
+    printf("=> No LED context\n");
     return;
+  }
 
   ws2811_channel_t &channel = _leds->channel();
 
   for (int i=0; i < LED_COUNT; i++)
     channel.leds[i] = 0;
 
+  printf("=> Sending (0,0,0) to LEDs\n");
+
   _leds->show();
+}
+
+void install_atexit()
+{
+  atexit(clear_leds_atexit);
+
+  struct sigaction int_action = { 0 };
+
+  int_action.sa_handler = exit;
+
+  sigaction(SIGINT, &int_action, NULL);
 }
 
 int main()
 {
+  srand(time(NULL));
+
   AquaContext *context = aqua_initialize(100, 75, 20, 10 /* frames per second */ * 3600 /* seconds per hour */ * 4 /* hours */);
 
   AquaPoint light_positions[LED_COUNT];
@@ -136,13 +158,13 @@ int main()
 
   _leds = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL);
 
-  atexit(clear_leds_atexit);
+  install_atexit();
 
   struct timespec before, after;
 
   clock_gettime(CLOCK_MONOTONIC, &before);
 
-#define MAX_ITERS 80 /* FPS */ * 10 /* seconds */
+#define MAX_ITERS 80 /* FPS */ * 15 /* seconds */
 
   for (int i=0; i < MAX_ITERS; i++)
   {
