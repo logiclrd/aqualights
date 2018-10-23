@@ -10,7 +10,7 @@ from neopixel import *
 import argparse
 
 # LED strip configuration:
-LED_COUNT      = 16      # Number of LED pixels.
+LED_COUNT      = 300     # Number of LED pixels.
 LED_PIN        = 18      # GPIO pin connected to the pixels (18 uses PWM!).
 #LED_PIN        = 10      # GPIO pin connected to the pixels (10 uses SPI /dev/spidev0.0).
 LED_FREQ_HZ    = 800000  # LED signal frequency in hertz (usually 800khz)
@@ -78,6 +78,18 @@ def theaterChaseRainbow(strip, wait_ms=50):
             for i in range(0, strip.numPixels(), 3):
                 strip.setPixelColor(i+q, 0)
 
+def fadeWholeStrand(strip, wait_ms=800):
+    """Fade of entire strand from black to white and then back."""
+    for j in range(511):
+        intensity = j
+        if intensity > 255:
+            intensity = 510 - intensity
+        for i in range(0, strip.numPixels()):
+            strip.setPixelColor(i, intensity * 0x10101)
+        print intensity
+        strip.show()
+        time.sleep(wait_ms/1000.0)
+
 # Main program logic follows:
 if __name__ == '__main__':
     # Process arguments
@@ -97,6 +109,8 @@ if __name__ == '__main__':
     try:
 
         while True:
+            print ('Fade whole strand.')
+            fadeWholeStrand(strip)
             print ('Color wipe animations.')
             colorWipe(strip, Color(255, 0, 0))  # Red wipe
             colorWipe(strip, Color(0, 255, 0))  # Blue wipe
