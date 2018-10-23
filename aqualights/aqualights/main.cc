@@ -19,6 +19,17 @@
 #define LED_BRIGHTNESS 255 /* Set to 0 for darkest and 255 for brightest */
 #define LED_CHANNEL    0   /* set to '1' for GPIOs 13, 19, 41, 45 or 53 */
 
+// Turns out the voltage fades when the LED strip is at max brightness. Try to
+// make the whole thing (255, 255, 255) and the LEDs are orange-red by the end
+// of the strip. So, we scale the brightness down so that even at its brightest,
+// the fade is avoided. Empirically, the fade is just starting to become apparent
+// when the brightness hits 100. None of our palettes are all white, so a 50%
+// fade, which gives a theoretical maximum of 128, is probably a safe bet most
+// of the time.
+
+#define PALETTE_NUMERATOR 1
+#define PALETTE_DENOMINATOR 2
+
 time_t last_source_added_time = 0;
 
 bool should_add_source()
@@ -52,8 +63,12 @@ void show_lights(AquaContext *context, AquaLightMap *light_map, Adafruit_NeoPixe
 {
   aqua_get_current_sky_palette(context, &_light_palette[0]);
 
+  #define P(x) ((x) * PALETTE_NUMERATOR / PALETTE_DENOMINATOR)
+
   for (int i=0; i < 256; i++)
-    _led_palette[i] = LEDColour(_light_palette[i].r, _light_palette[i].g, _light_palette[i].b);
+    _led_palette[i] = LEDColour(P(_light_palette[i].r), P(_light_palette[i].g), P(_light_palette[i].b));
+
+  #undef P
 
   aqua_light_map_render(light_map, context);
 
@@ -111,12 +126,45 @@ void *generate_dummy_light_positions(AquaContext *context, AquaPoint *light_posi
   }
 }
 
+struct LoopStatistics
+{
+  struct timespec Before, After;
+  int IterationCount;
+
+  void Start()
+  {
+    clock_gettime(CLOCK_MONOTONIC, &Before);
+    IterationCount = 0;
+  }
+
+  void Count()
+  {
+    IterationCount++;
+  }
+
+  void Finish()
+  {
+    clock_gettime(CLOCK_MONOTONIC, &After);
+  }
+
+  void PrintReport()
+  {
+    double time_before = Before.tv_sec + Before.tv_nsec * 0.000000001;
+    double time_after = After.tv_sec + After.tv_nsec * 0.000000001;
+
+    double time_elapsed = time_after - time_before;
+
+    printf("Elapsed: %.3f seconds\n", time_elapsed);
+    printf("Iterations per second: %.3f\n", IterationCount / time_elapsed);
+  }
+};
+
+LoopStatistics _loop_statistics;
 Adafruit_NeoPixel *_leds = NULL;
+AquaContext *_context = NULL;
 
 void clear_leds_atexit()
 {
-  printf("Running atexit...\n");
- 
   if (_leds == NULL)
   {
     printf("=> No LED context\n");
@@ -133,9 +181,22 @@ void clear_leds_atexit()
   _leds->show();
 }
 
+void perform_atexit()
+{
+  printf("Running atexit...\n");
+
+  clear_leds_atexit();
+
+  _loop_statistics.Finish();
+  _loop_statistics.PrintReport();
+
+  if (_context != NULL)
+    aqua_free(_context);
+}
+
 void install_atexit()
 {
-  atexit(clear_leds_atexit);
+  atexit(perform_atexit);
 
   struct sigaction int_action = { 0 };
 
@@ -148,40 +209,26 @@ int main()
 {
   srand(time(NULL));
 
-  AquaContext *context = aqua_initialize(100, 75, 20, 10 /* frames per second */ * 3600 /* seconds per hour */ * 4 /* hours */);
+  _context = aqua_initialize(100, 75, 20, 10 /* frames per second */ * 3600 /* seconds per hour */ * 4 /* hours */);
 
   AquaPoint light_positions[LED_COUNT];
 
-  generate_dummy_light_positions(context, light_positions, LED_COUNT);
+  generate_dummy_light_positions(_context, light_positions, LED_COUNT);
 
-  AquaLightMap *light_map = aqua_generate_light_map(context, LED_COUNT, light_positions);
+  AquaLightMap *light_map = aqua_generate_light_map(_context, LED_COUNT, light_positions);
 
   _leds = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL);
 
   install_atexit();
 
-  struct timespec before, after;
+  _loop_statistics.Start();
 
-  clock_gettime(CLOCK_MONOTONIC, &before);
-
-#define MAX_ITERS 80 /* FPS */ * 15 /* seconds */
-
-  for (int i=0; i < MAX_ITERS; i++)
+  while (true)
   {
-    advance(context);
-    show_lights(context, light_map, _leds);
+    advance(_context);
+    show_lights(_context, light_map, _leds);
+
+    _loop_statistics.Count();
   }
-
-  clock_gettime(CLOCK_MONOTONIC, &after);
-
-  double time_before = before.tv_sec + before.tv_nsec * 0.000000001;
-  double time_after = after.tv_sec + after.tv_nsec * 0.000000001;
-
-  double time_elapsed = time_after - time_before;
-
-  printf("Elapsed: %.3f seconds\n", time_elapsed);
-  printf("Iterations per second: %.3f\n", MAX_ITERS / time_elapsed);
-
-  aqua_free(context);
 }
 
