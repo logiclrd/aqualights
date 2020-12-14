@@ -16,7 +16,7 @@
 #define LED_FREQ_HZ    800000  /* Serial communicatior frequency in hertz */
 #define LED_DMA        10  /* DMA channel to use for generating signal (try 10) */
 #define LED_INVERT     false   /* True to invert the signal (when using NPN transistor level shift) */
-#define LED_BRIGHTNESS 255 /* Set to 0 for darkest and 255 for brightest */
+#define LED_BRIGHTNESS 20 /* Set to 0 for darkest and 255 for brightest */
 #define LED_CHANNEL    0   /* set to '1' for GPIOs 13, 19, 41, 45 or 53 */
 
 // Turns out the voltage fades when the LED strip is at max brightness. Try to
@@ -87,41 +87,36 @@ void show_lights(AquaContext *context, AquaLightMap *light_map, Adafruit_NeoPixe
   leds->show();
 }
 
-void *generate_dummy_light_positions(AquaContext *context, AquaPoint *light_positions, int num_lights)
+void *generate_light_positions(AquaContext *context, AquaPoint *light_positions, int num_lights)
 {
   int width, height;
 
   aqua_get_frame_size(context, &width, &height);
 
-  double total_area = width * height * 2;
-  double area_per_light = total_area / num_lights;
+  double cell_width = width / 24.0;
+  double cell_height = height / 12.0;
 
-  double square_side = sqrt(area_per_light);
+  int index = 0;
 
-  double x = square_side * 0.25;
-  double y = square_side * 0.5;
-
-  double min_x = square_side * 0.25;
-  double max_x = width - square_side * 0.25;
-  int dx = 1;
-
-  for (int i = 0; i < num_lights; i++)
+  for (int row = 0; row < 12; row++)
   {
-    light_positions[i] = AquaPoint((float)x, (float)y);
+    int even_row = (row & 1) == 0;
 
-    x += dx * (square_side * 0.5);
+    double x = even_row ? cell_width * 0.5 : width - cell_width * 0.5;
+    double y = (row + 0.5) * cell_height;
 
-    if ((dx > 0) && (x > max_x))
+    double dx = even_row ? cell_width : -cell_width;
+
+    for (int column = 0; column < 25; column++)
     {
-      x = 2 * max_x - x;
-      y += square_side;
-      dx = -1;
-    }
-    else if ((dx < 0) && (x < min_x))
-    {
-      x = 2 * min_x - x;
-      y += square_side;
-      dx = +1;
+      light_positions[index++] = AquaPoint((float)x, (float)y);
+
+      x += dx;
+
+      if (x < 0)
+        x = 0;
+      if (x > width)
+        x = width;
     }
   }
 }
@@ -213,7 +208,7 @@ int main()
 
   AquaPoint light_positions[LED_COUNT];
 
-  generate_dummy_light_positions(_context, light_positions, LED_COUNT);
+  generate_light_positions(_context, light_positions, LED_COUNT);
 
   AquaLightMap *light_map = aqua_generate_light_map(_context, LED_COUNT, light_positions);
 

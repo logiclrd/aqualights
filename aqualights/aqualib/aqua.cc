@@ -462,7 +462,7 @@ AquaLightMap *aqua_generate_light_map(AquaContext *context, int num_lights, Aqua
 			if (poly_points[2].y == (int)poly_points[2].y)
 				poly_points[2].y -= 0.00001f;
 
-			fill_polygon(poly_points, light_map->light_for_pixel, light_map->width, light_map->height, (int)i);
+			fill_polygon(poly_points, light_map->light_for_pixel, light_map->width, light_map->height, sites[i].index);
 
 			edge_iterator = edge_iterator->next;
 		}
