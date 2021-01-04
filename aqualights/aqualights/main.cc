@@ -4,11 +4,14 @@
 #include "ws2811.h"
 
 #include <signal.h>
+#include <unistd.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+
+#define FPS 10
 
 // LED strip configuration:
 #define LED_COUNT      300 /* Number of LED pixels. */
@@ -178,7 +181,7 @@ void clear_leds_atexit()
 
 void perform_atexit()
 {
-  printf("Running atexit...\n");
+  printf("\n\nRunning atexit...\n");
 
   clear_leds_atexit();
 
@@ -200,17 +203,38 @@ void install_atexit()
   sigaction(SIGINT, &int_action, NULL);
 }
 
+long long get_time_microseconds()
+{
+  struct timespec time;
+
+  clock_gettime(CLOCK_REALTIME, &time);
+
+  const long long MICROSECONDS_PER_SECOND = 1000000;
+  const long long NANOSECONDS_PER_MICROSECOND = 1000;
+
+  return (time.tv_sec * MICROSECONDS_PER_SECOND)
+       + (time.tv_nsec / NANOSECONDS_PER_MICROSECOND);
+}
+
 int main()
 {
   srand(time(NULL));
 
-  _context = aqua_initialize(100, 75, 20, 10 /* frames per second */ * 3600 /* seconds per hour */ * 4 /* hours */);
+  printf("Initializing aqua library...\n");
+
+  _context = aqua_initialize(100, 75, 20, FPS /* frames per second */ * 3600 /* seconds per hour */ * 4 /* hours */);
+
+  printf("Generating light positions...\n");
 
   AquaPoint light_positions[LED_COUNT];
 
   generate_light_positions(_context, light_positions, LED_COUNT);
 
+  printf("Generating light map...\n");
+
   AquaLightMap *light_map = aqua_generate_light_map(_context, LED_COUNT, light_positions);
+
+  printf("Connecting to NeoPixel...\n");
 
   _leds = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL);
 
@@ -218,12 +242,32 @@ int main()
 
   _loop_statistics.Start();
 
+  long long start_time = get_time_microseconds();
+  long long frame_number = 0;
+
   while (true)
   {
+    printf("Frame...");
     advance(_context);
+
+    printf(" sending...");
     show_lights(_context, light_map, _leds);
 
+    printf(" counting...");
     _loop_statistics.Count();
+
+    frame_number++;
+
+    long long next_frame_time = start_time + frame_number * 1000000 / FPS;
+    long long delay = next_frame_time - get_time_microseconds();
+
+    if (delay > 0)
+    {
+      printf(" waiting %d us...", delay);
+      usleep(delay);
+    }
+
+    printf("\n");
   }
 }
 
